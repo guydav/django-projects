@@ -37,7 +37,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'predict'
+
+    'predict',
+
+    'rest_framework'
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -121,3 +124,5 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = "./static"
+
+AUTH_PROFILE_MODULE = 'predict.models.UserProfile'

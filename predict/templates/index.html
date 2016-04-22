@@ -573,3 +573,13 @@
     </div> <!-- /container -->
 
 {% endblock %}
+
+{% block javascript %}
+    <script>
+        $(document).ready(function () {
+            $('.nav li').removeClass('active');
+            $('#home-link').addClass('active');
+
+        });
+    </script>
+{% endblock %}

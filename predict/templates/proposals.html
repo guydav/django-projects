@@ -4,8 +4,8 @@
 
 {% block body %}
     {% load staticfiles %}
-    {% for project in projects %}
 
+    {% for project in projects %}
         <div class="well" style="background: white; border-width: 3px;">
             {% comment TODO: implement on-click hidden div expansion jquery slide down transition / slide toggle %} {% endcomment %}
             <div class="row">
@@ -15,11 +15,12 @@
             <div class="row">
                 <div class="col-md-3"><h3>Challenge</h3>{{ project.challenge }}</div>
                 <div class="col-md-3"><h3>Proposal</h3>{{ project.proposal }}</div>
-                <div class="col-md-2 col-md-offset-1"><img style="width: 100%; height: auto;" src="{% static project.logo_url %}"/></div>
-                <div class="col-md-3">
-                    <strong>Multiplier:</strong><h4>x{{ project.multiplier }}</h4>
-                    <button type="button" class="btn btn-success" style="margin: 5px;">Support this project</button>
-                    <button type="button" class="btn btn-info" style="margin: 5px;" onclick="$('#info-{{ project.pk }}').slideToggle(500)">Additional information</button>
+                <div class="col-md-2"><img style="width: 100%; height: auto;" src="{% static project.logo_url %}"/></div>
+                <div class="col-md-3  col-md-offset-1">
+                    <strong>Multiplier:</strong><h4 id="project-multiplier-{{ project.pk }}">x{{ project.multiplier }}</h4>
+                    {% comment TODO: the button should look differently if I'm already supporting the project or not %} {% endcomment %}
+                    <button type="button" class="btn btn-success js-support-button" id="support-button-{{ project.pk }}" style="margin: 5px;" data-project="{{ project.pk }}">Support project</button>
+                    <button type="button" class="btn btn-info" style="margin: 5px;" onclick="$('#info-{{ project.pk }}').slideToggle(500);">Additional information</button>
                 </div>
             </div>
             {% comment TODO: implement action (support / withdraw support) here %} {% endcomment %}
@@ -37,7 +38,87 @@
 
     {% endfor %}
 
-    <!--
+{% endblock %}
+
+{% block javascript %}
+    <script>
+
+        var updateButton = function(button) {
+            var project = button.getAttribute('data-project');
+            var updated = false;
+
+            $.ajax('/predict/user_is_supporting/{{ user.pk }}/' + project, {
+                success: function(data, textStatus, jqXHR) {
+                    if (data.supporting) {
+                        $(button).removeClass('btn-success').removeClass('btn-warning').addClass('btn-danger')
+                                .text('Stop supporting project').removeAttr('disabled');
+                        updated = true;
+                    } else {
+                        $(button).removeClass('btn-danger').removeClass('btn-warning').addClass('btn-success')
+                                .text('Support').removeAttr('disabled');
+                    }
+                },
+            });
+
+            if (updated) {
+                return;
+            }
+
+            $.ajax('/predict/user_can_support/{{ user.pk }}/' + project, {
+                success: function(data, textStatus, jqXHR) {
+                    if (!data.can_support) {
+                        $(button).removeClass('btn-success').removeClass('btn-danger').addClass('btn-warning')
+                                .text('Insufficient budget').attr('disabled', 'disabled');
+                        updated = true;
+                    };
+                },
+            });
+
+            if (updated) {
+                return;
+            }
+
+        };
+
+        var updateAllButtons = function() {
+            _.each($('.js-support-button'), updateButton);
+        }
+
+        $(document).ready(function () {
+            $('.nav li').removeClass('active');
+            $('#proposals-link').addClass('active');
+            $('#budget').addClass('active');
+            updateAllButtons();
+        });
+
+        $('.js-support-button').click(function (e) {
+            var project = e.target.getAttribute('data-project');
+            $.ajax('/predict/support/{{ user.pk }}/' + project, {
+                            success: function(data, textStatus, jqXHR) {
+                                $('#project-multiplier-' + project).text('x' + data.multiplier);
+
+                                $.ajax('/predict/get_remaining_budget/{{ user.pk }}', {
+                                    success: function(data, textStatus, jqXHR) {
+                                        $('#budget-text').text(data.budget);
+                                    }
+                                });
+
+                                updateAllButtons();
+
+                            },
+                            error: function(data, textStatus, jqXHR) {
+                                console.log('Error');
+                                console.log(data);
+                                console.log(textStatus);
+                                console.log(jqXHR);
+                            },
+            });
+        });
+
+    </script>
+{% endblock %}
+
+<!--
     <table class="table table-responsive table-striped table-hover">
         <thead>
             <tr>
@@ -64,13 +145,3 @@
         </tbody>
     </table>
     -->
-{% endblock %}
-
-{% block javascript %}
-    <script>
-        $(document).ready(function () {
-            $('.nav li').removeClass('active');
-            $('#proposals-link').addClass('active');
-        });
-    </script>
-{% endblock %}

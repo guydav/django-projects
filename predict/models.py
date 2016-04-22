@@ -8,6 +8,25 @@ import locale
 
 locale.setlocale(locale.LC_ALL, '')
 
+MULTIPLIER_CHANGE = 0.1
+TOTAL_BUDGET = 5 * 10 ** 5  #10 ** 6
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, related_name='profile')
+
+    def remaining_budget(self):
+        return TOTAL_BUDGET - sum([project.amount for project in self.user.projects_supported.all()])
+
+    def str_remaining_budget(self):
+        return locale.currency(self.remaining_budget(), grouping=True)
+
+    def can_support_project(self, project):
+        if project in self.user.projects_supported.all():
+            return True
+
+        return project.amount < self.remaining_budget()
+
+
 
 class ProjectProposal(models.Model):
     created = models.DateTimeField(auto_now_add=True)
@@ -35,8 +54,6 @@ class ProjectProposal(models.Model):
     picture = models.ImageField(upload_to='static/media')
     link = models.URLField()
 
-    # TODO: implement repr
-
     def __str__(self):
         return 'Project proposal by {org}'.format(org=self.organization)
 
@@ -48,6 +65,40 @@ class ProjectProposal(models.Model):
 
     def picture_url(self):
         return 'media/{url}'.format(url=self.picture.url)
+
+    def is_supported_by(self, user):
+        return self.supporting_users.filter(pk=user.pk).exists()
+
+    def change_user_support(self, user):
+        delta = MULTIPLIER_CHANGE
+        supporting_after = True
+
+        if self.is_supported_by(user):
+            self.supporting_users.remove(user)
+            supporting_after = False
+
+        else:
+            self.supporting_users.add(user)
+            delta *= -1
+
+        self._change_user_support(user, delta)
+        return supporting_after
+
+    def _change_user_support(self, user, delta):
+        new_multiplier = self.multiplier + delta
+
+        log = UserProjectSupportLog(user=user,
+                                    project=self,
+                                    current_multiplier=new_multiplier)
+        multiplier_log = MultiplierChangeLog(previous_multiplier=self.multiplier,
+                                             current_multiplier=new_multiplier,
+                                             cause=USER_ACTION,
+                                             related_log=log)
+
+        self.multiplier = new_multiplier
+        self.save()
+        log.save()
+        multiplier_log.save()
 
 
 class UserProjectSupportLog(models.Model):

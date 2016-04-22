@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Predict | Sign Up or Log In{% endblock %}
+
+{% block body %}
+
+    <div class="row">
+        {% if user.is_authenticated %}
+            <div class="col-md-6">
+                <div class="alert alert-info" role="alert">
+                    Hello, {{ user.username }}. You are already logged in.
+                </div>
+                <form action="/predict/logout" id="logout">
+                    <button class="btn btn-default" type="submit">Log out</button>
+                    <input type="hidden" name="next" value="/predict" />
+                </form>
+            </div>
+
+        {% else %}
+            <div class="col-md-6">
+                {% if signup_form.errors %}
+                    <div class="alert alert-danger" role="alert">
+                        <strong>Registration failed:</strong> {{ signup_form.errors }}
+                    </div>
+                {% endif %}
+                <div class="well">
+                    <h2>Sign up</h2>
+                    <form action="/predict/signup" method="post" id="signup">
+                        {% csrf_token %}
+                        {{ signup_form }}
+                        <p><input type="submit" value="Sign up" class="btn btn-default"/></p>
+                        <input type="hidden" name="next" value="/predict/proposals" />
+                    </form>
+                </div>
+            </div>
+
+            <div class="col-md-4 col-md-offset-2">
+                {% if login_form.errors %}
+                    <div class="alert alert-danger" role="alert">
+                        <strong>Login failed:</strong> {{ login_form.errors }}
+                    </div>
+                {% endif %}
+                <div class="well">
+                    <h2>Log in</h2>
+                    <form action="/predict/login" method="post" id="login">
+                        {% csrf_token %}
+                        {{ login_form }}
+                        <p><input type="submit" value="Log in" class="btn btn-default"/></p>
+                        <input type="hidden" name="next" value="/predict/proposals" />
+                    </form>
+                </div>
+            </div>
+        {% endif %}
+        <!--
+        <div class="col-md-4">
+            <div class="well">
+                <h2>Log in</h2>
+                <form action="/predict/login" id="login">
+                    <div class="form-group">
+                        <label for="email-input">Email address</label>
+                        <input type="email" class="form-control" id="email-input" placeholder="Email">
+                    </div>
+                    <div class="form-group">
+                        <label for="password-input">Password</label>
+                        <input type="password" class="form-control" id="password-input" placeholder="Password">
+                    </div>
+                    <input type="submit" value="Log in" class="btn btn-default">
+                </form>
+            </div>
+        </div>
+        -->
+    <!--
+        <div class="col-md-4">
+            <div class="well">
+                <h2>Sign up</h2>
+                <form id="signup">
+                    <div class="form-group">
+                        <label for="email-input">Email address</label>
+                        <input type="email" class="form-control" id="email-input" placeholder="Email">
+                    </div>
+                    <div class="form-group">
+                        <label for="password-input">Password</label>
+                        <input type="password" class="form-control" id="password-input" placeholder="Password">
+                    </div>
+                    <div class="form-group">
+                        <label for="first-name-input">Password</label>
+                        <input type="text" class="form-control" id="first-name-input" placeholder="First Name">
+                    </div>
+                    <div class="form-group">
+                        <label for="last-name-input">Password</label>
+                        <input type="text" class="form-control" id="last-name-input" placeholder="Last Name">
+                    </div>
+                    <input type="submit" value="Sign up" class="btn btn-default">
+                </form>
+            </div>
+        </div>
+        -->
+    </div>
+
+
+{% endblock %}
+
+{% block javascript %}
+    <script>
+        $(document).ready(function () {
+            $('.nav li').removeClass('active');
+            $('#signup-link').addClass('active');
+            $('input[id^="id-"]').addClass('form-control');
+        });
+    </script>
+{% endblock %}
